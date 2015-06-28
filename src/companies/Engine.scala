@@ -2,7 +2,6 @@ package companies
 
 import scala.util.Random
 
-
 class Engine {
 
   abstract class Cell(val position: Position)
@@ -13,9 +12,9 @@ class Engine {
 
   type BoardData[T] = Array[Array[T]]
 
-  case class Position(x: Int, y: Int)
+  class Position(val x: Int, val y: Int)
 
-  def intToCell(value: Int, position: Position): Cell  = value match {
+  def intToCell(value: Int, position: Position): Cell = value match {
     case 1 => new AliveCell(position)
     case _ => new DeadCell(position)
   }
@@ -25,14 +24,14 @@ class Engine {
     case _ => 0
   }
 
-  case class Board(data: BoardData[Cell]) {
-    def cell(p: Position): Option[Cell] =
+  class Board(data: BoardData[Cell]) {
+    def getCell(p: Position): Option[Cell] =
       data.lift(p.y).flatMap(_.lift(p.x))
 
-    def neighbors(position: Position): Array[Option[Cell]] =
+    def getNeighbors(position: Position): Array[Option[Cell]] =
       Array((-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1))
         .map(p => new Position(position.x + p._1, position.y + p._2))
-        .map(cell)
+        .map(getCell)
 
     def toArray: BoardData[Int] = data.map(_.map(cellToInt))
 
@@ -54,7 +53,6 @@ class Engine {
     cell match {
       case cell: AliveCell =>
         if (amount < 2) kill(cell) //live cell with fewer than two live neighbours dies
-        else if (amount == 2 || amount == 3) resurrect(cell) //live cell with two or three live neighbours lives
         else if (amount > 3) kill(cell) //live cell with more than three live neighbours dies
         else cell
       case _ =>
@@ -70,9 +68,7 @@ class Engine {
 
   def sumOfNeighbors(board: Board) = (cell: Cell) =>
     board
-      .neighbors(cell.position)
-      .filter(isAlive)
-      .length
+      .getNeighbors(cell.position).count(isAlive)
 
   def tick(board: Board): Board = {
     val aliveNeighborsNum = sumOfNeighbors(board)
@@ -80,4 +76,5 @@ class Engine {
       cell => applyRules(aliveNeighborsNum(cell), cell)
     )
   }
+
 }
